@@ -1,19 +1,24 @@
-FROM node:14-alpine3.15
 
-# Update everything and install needed dependencies
-RUN apk add --update graphicsmagick tzdata
 
-# # Set a custom user to not have n8n run as root
+ARG NODE_VERSION=16
+FROM n8nio/base:${NODE_VERSION}
+
+ENV NODE_ENV=production
+RUN set -eux; \
+	apkArch="$(apk --print-arch)"; \
+	case "$apkArch" in \
+		'armv7') apk --no-cache add --virtual build-dependencies python3 build-base;; \
+	esac && \
+	npm install -g --omit=dev n8n@${N8N_VERSION} && \
+	case "$apkArch" in \
+		'armv7') apk del build-dependencies;; \
+	esac && \
+	find /usr/local/lib/node_modules/n8n -type f -name "*.ts" -o -name "*.js.map" -o -name "*.vue" | xargs rm && \
+	rm -rf /root/.npm
+
+# Set a custom user to not have n8n run as root
 USER root
-
-# Install n8n and the also temporary all the packages
-# it needs to build it correctly.
-RUN apk --update add --virtual build-dependencies python build-base ca-certificates && \
-	npm_config_user=root npm install -g n8n@${N8N_VERSION} && \
-	apk del build-dependencies
-
 WORKDIR /data
-
-EXPOSE $PORT
-
-CMD ["n8n"]
+RUN apk --no-cache add su-exec
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+ENTRYPOINT ["tini", "--", "/docker-entrypoint.sh"]
