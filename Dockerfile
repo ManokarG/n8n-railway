@@ -1,4 +1,4 @@
-FROM node:14-alpine
+FROM node:14-alpine3.15
 
 # Update everything and install needed dependencies
 RUN apk add --update graphicsmagick tzdata
