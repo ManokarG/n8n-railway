@@ -14,4 +14,6 @@ RUN apk --update add --virtual build-dependencies python build-base ca-certifica
 
 WORKDIR /data
 
+EXPOSE $PORT
+
 CMD ["n8n"]
